@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>แดชบอร์ดค่าฝุ่น PM2.5</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>🌫️ แดชบอร์ดค่าฝุ่น PM2.5</h1>
+    <p id="status">กำลังโหลดข้อมูล...</p>
+  </header>
+
+  <main>
+    <section id="cards"></section>
+    <div class="grid">
+      <div id="map"></div>
+      <div class="chart-box">
+        <h2 id="chart-title">เลือกเมืองเพื่อดูกราฟ</h2>
+        <canvas id="chart"></canvas>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
