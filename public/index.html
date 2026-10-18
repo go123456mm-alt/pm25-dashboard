@@ -19,8 +19,13 @@
       <div id="map"></div>
       <div class="chart-box">
         <h2 id="chart-title">เลือกเมืองเพื่อดูกราฟ</h2>
-        <button id="pdf-btn" disabled>📄 บันทึกเป็น PDF</button>
+        <div>
+          <button id="pdf-btn" disabled>📄 บันทึกเป็น PDF</button>
+          <button id="csv-btn" disabled>📊 ดาวน์โหลด CSV</button>
+        </div>
         <canvas id="chart"></canvas>
+        <h3>ค่าเฉลี่ยรายวัน (7 วันล่าสุด)</h3>
+        <canvas id="daily-chart"></canvas>
       </div>
     </div>
   </main>

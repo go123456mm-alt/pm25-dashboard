@@ -48,3 +48,15 @@ main { padding: 20px; max-width: 1200px; margin: auto; }
 @media (max-width: 800px) {
   .grid { grid-template-columns: 1fr; }
 }
+
+#csv-btn {
+  margin: 0 0 12px 8px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #0f172a;
+  color: white;
+  cursor: pointer;
+}
+#csv-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.chart-box h3 { margin: 24px 0 8px; font-size: 1rem; }

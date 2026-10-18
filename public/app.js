@@ -9,6 +9,7 @@ function getLevel(pm25) {
 const statusEl = document.getElementById('status');
 const cardsEl = document.getElementById('cards');
 let chart;
+let dailyChart;
 
 const map = L.map('map').setView([13.0, 101.0], 5.5);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -16,30 +17,29 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 async function showChart(city) {
+  const name = encodeURIComponent(city.name);
   document.getElementById('chart-title').textContent =
     'PM2.5 ย้อนหลัง 24 ชม. – ' + city.name;
 
+  // กราฟเส้น 24 ชม. จากฐานข้อมูล (สำรองด้วยข้อมูลจาก API)
   let rows;
   try {
-    const res = await fetch('/api/history/' + encodeURIComponent(city.name));
+    const res = await fetch('/api/history/' + name);
     if (!res.ok) throw new Error('history failed');
     rows = (await res.json()).rows;
   } catch (err) {
     console.error(err);
-    rows = city.hourly;
+    rows = city.hourly.slice(-24);
   }
-
-  const labels = rows.map((h) => h.time.slice(5, 16).replace('T', ' '));
-  const values = rows.map((h) => h.pm25);
 
   if (chart) chart.destroy();
   chart = new Chart(document.getElementById('chart'), {
     type: 'line',
     data: {
-      labels,
+      labels: rows.map((h) => h.time.slice(5, 16).replace('T', ' ')),
       datasets: [{
         label: 'PM2.5 (µg/m³)',
-        data: values,
+        data: rows.map((h) => h.pm25),
         borderColor: getLevel(city.pm25).color,
         tension: 0.3,
         pointRadius: 0,
@@ -48,11 +48,35 @@ async function showChart(city) {
     options: { scales: { x: { ticks: { maxTicksLimit: 8 } } } },
   });
 
-  const btn = document.getElementById('pdf-btn');
-  btn.disabled = false;
-  btn.onclick = () => {
-    window.location.href = '/api/report/' + encodeURIComponent(city.name);
-  };
+  // กราฟแท่งรายวัน
+  try {
+    const res = await fetch('/api/daily/' + name);
+    if (!res.ok) throw new Error('daily failed');
+    const daily = (await res.json()).rows;
+
+    if (dailyChart) dailyChart.destroy();
+    dailyChart = new Chart(document.getElementById('daily-chart'), {
+      type: 'bar',
+      data: {
+        labels: daily.map((d) => d.day.slice(5)),
+        datasets: [{
+          label: 'ค่าเฉลี่ย PM2.5 (µg/m³)',
+          data: daily.map((d) => d.avg),
+          backgroundColor: daily.map((d) => getLevel(d.avg).color),
+        }],
+      },
+    });
+  } catch (err) {
+    console.error(err);
+  }
+
+  const pdfBtn = document.getElementById('pdf-btn');
+  pdfBtn.disabled = false;
+  pdfBtn.onclick = () => { window.location.href = '/api/report/' + name; };
+
+  const csvBtn = document.getElementById('csv-btn');
+  csvBtn.disabled = false;
+  csvBtn.onclick = () => { window.location.href = '/api/csv/' + name; };
 }
 
 function render(cities) {
