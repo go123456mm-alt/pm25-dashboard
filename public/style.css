@@ -34,6 +34,17 @@ main { padding: 20px; max-width: 1200px; margin: auto; }
 .chart-box { background: white; padding: 16px; border-radius: 12px; }
 .chart-box h2 { margin-top: 0; font-size: 1.1rem; }
 
+#pdf-btn {
+  margin-bottom: 12px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #0f172a;
+  color: white;
+  cursor: pointer;
+}
+#pdf-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
 @media (max-width: 800px) {
   .grid { grid-template-columns: 1fr; }
 }

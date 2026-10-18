@@ -1,4 +1,3 @@
-// สีและระดับตามเกณฑ์ PM2.5 (µg/m³)
 function getLevel(pm25) {
   if (pm25 <= 15) return { color: '#0ea5e9', label: 'ดีมาก' };
   if (pm25 <= 25) return { color: '#22c55e', label: 'ดี' };
@@ -11,18 +10,27 @@ const statusEl = document.getElementById('status');
 const cardsEl = document.getElementById('cards');
 let chart;
 
-// สร้างแผนที่
 const map = L.map('map').setView([13.0, 101.0], 5.5);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap',
 }).addTo(map);
 
-function showChart(city) {
+async function showChart(city) {
   document.getElementById('chart-title').textContent =
-    `PM2.5 ย้อนหลัง 24 ชม. และคาดการณ์ – ${city.name}`;
+    'PM2.5 ย้อนหลัง 24 ชม. – ' + city.name;
 
-  const labels = city.hourly.map((h) => h.time.slice(5, 16).replace('T', ' '));
-  const values = city.hourly.map((h) => h.pm25);
+  let rows;
+  try {
+    const res = await fetch('/api/history/' + encodeURIComponent(city.name));
+    if (!res.ok) throw new Error('history failed');
+    rows = (await res.json()).rows;
+  } catch (err) {
+    console.error(err);
+    rows = city.hourly;
+  }
+
+  const labels = rows.map((h) => h.time.slice(5, 16).replace('T', ' '));
+  const values = rows.map((h) => h.pm25);
 
   if (chart) chart.destroy();
   chart = new Chart(document.getElementById('chart'), {
@@ -39,6 +47,12 @@ function showChart(city) {
     },
     options: { scales: { x: { ticks: { maxTicksLimit: 8 } } } },
   });
+
+  const btn = document.getElementById('pdf-btn');
+  btn.disabled = false;
+  btn.onclick = () => {
+    window.location.href = '/api/report/' + encodeURIComponent(city.name);
+  };
 }
 
 function render(cities) {
@@ -46,18 +60,16 @@ function render(cities) {
   cities.forEach((city) => {
     const level = getLevel(city.pm25);
 
-    // การ์ด
     const card = document.createElement('div');
     card.className = 'card';
     card.style.background = level.color;
-    card.innerHTML = `
-      <div class="city">${city.name}</div>
-      <div class="value">${Math.round(city.pm25)}</div>
-      <div class="label">${level.label}</div>`;
+    card.innerHTML =
+      '<div class="city">' + city.name + '</div>' +
+      '<div class="value">' + Math.round(city.pm25) + '</div>' +
+      '<div class="label">' + level.label + '</div>';
     card.onclick = () => showChart(city);
     cardsEl.appendChild(card);
 
-    // หมุดบนแผนที่
     L.circleMarker([city.lat, city.lon], {
       radius: 14,
       color: 'white',
@@ -66,7 +78,10 @@ function render(cities) {
       fillOpacity: 0.9,
     })
       .addTo(map)
-      .bindPopup(`<b>${city.name}</b><br>PM2.5: ${Math.round(city.pm25)} µg/m³<br>${level.label}`)
+      .bindPopup(
+        '<b>' + city.name + '</b><br>PM2.5: ' + Math.round(city.pm25) +
+        ' µg/m³<br>' + level.label
+      )
       .on('click', () => showChart(city));
   });
 
@@ -79,13 +94,13 @@ async function load() {
     statusEl.textContent = 'กำลังโหลดข้อมูล...';
 
     const res = await fetch('/api/air');
-    if (!res.ok) throw new Error('เซิร์ฟเวอร์ตอบกลับผิดพลาด');
+    if (!res.ok) throw new Error('server error');
     const { data, failed } = await res.json();
 
     render(data);
     const time = new Date().toLocaleTimeString('th-TH');
-    statusEl.textContent = `อัปเดตล่าสุด ${time}` +
-      (failed ? ` (โหลดไม่สำเร็จ ${failed} เมือง)` : '');
+    statusEl.textContent = 'อัปเดตล่าสุด ' + time +
+      (failed ? ' (โหลดไม่สำเร็จ ' + failed + ' เมือง)' : '');
   } catch (err) {
     statusEl.className = 'error';
     statusEl.textContent = 'โหลดข้อมูลไม่สำเร็จ ลองรีเฟรชอีกครั้ง';
